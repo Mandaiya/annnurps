@@ -58,7 +58,7 @@ def reset_game(game_state):
     game_state['user_score'] = 0
     game_state['bot_score'] = 0
     game_state['target_score'] = None
-    game_state['setting_target'] = True
+    game_state['setting_target'] = False  # Stop expecting target input
     game_state['active'] = False
 
 # Initialize scoreboard to track each user's cumulative points
@@ -119,6 +119,7 @@ def handle_update(update):
         reset_game(game_state)
         game_state['active'] = True
         game_active = True
+        game_state['setting_target'] = True  # Start expecting target input
         send_message(chat_id, user_id, "Please enter a target score between 1 and 10 to start your game.", username)
     
     elif text == "/stoprps":
@@ -128,7 +129,7 @@ def handle_update(update):
         send_message(chat_id, user_id, "Rock, Paper, Scissors game has ended for everyone.", username)
     
     elif text == "/die":
-        # End the game only for the user who typed /end
+        # End the game only for the user who typed /die
         if not game_state['active']:
             send_message(chat_id, user_id, "You don't have an active game. Type /startrps to start a new game.", username)
         else:
@@ -145,7 +146,7 @@ def handle_update(update):
             "/start - Start a conversation with the bot.\n"
             "/startrps - Begin a new Rock, Paper, Scissors game.\n"
             "/stoprps - Stop the game for everyone.\n"
-            "/die - cancel your individual game.\n"
+            "/die - Cancel your individual game.\n"
             "/scoreboard - Display the current scoreboard.\n"
             "/help - Show this help message.\n\n"
             "*How to Play:*\n"
@@ -156,7 +157,7 @@ def handle_update(update):
         )
         send_message(chat_id, user_id, help_text, username)
     
-    elif game_state['setting_target']:
+    elif game_state['setting_target'] and game_state['active']:
         try:
             target_score = int(text)
             if 1 <= target_score <= 10:
@@ -168,14 +169,13 @@ def handle_update(update):
         except ValueError:
             send_message(chat_id, user_id, "Invalid input. Please enter a number between 1 and 10.", username)
     
-    elif text in ["rock", "paper", "scissors"]:
-        if not game_state['active']:
-            send_message(chat_id, user_id, "You are not entered into the game. Type '/startrps' to join.", username)
-        elif game_state['target_score'] is None:
-            send_message(chat_id, user_id, "Please start a new game and set a target score by typing '/startrps'.", username)
-        else:
+    elif text in ["rock", "paper", "scissors"] and game_state['active']:
+        # Check if the user has an active game before responding
+        if game_state['target_score'] is not None:
             result_message = play_rps(text, game_state)
             send_message(chat_id, user_id, result_message, username)
+        else:
+            send_message(chat_id, user_id, "Please start a new game and set a target score by typing '/startrps'.", username)
 
 # Main polling loop
 def main():
