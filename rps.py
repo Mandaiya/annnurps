@@ -127,6 +127,14 @@ def handle_update(update):
         user_games.clear()
         send_message(chat_id, user_id, "Rock, Paper, Scissors game has ended for everyone.", username)
     
+    elif text == "/end":
+        # End the game only for the user who typed /end
+        if not game_state['active']:
+            send_message(chat_id, user_id, "You don't have an active game. Type /startrps to start a new game.", username)
+        else:
+            reset_game(game_state)
+            send_message(chat_id, user_id, "Your game has ended. Type /startrps to start a new game.", username)
+    
     elif text == "/scoreboard":
         display_scoreboard(chat_id)
     
@@ -137,6 +145,7 @@ def handle_update(update):
             "/start - Start a conversation with the bot.\n"
             "/startrps - Begin a new Rock, Paper, Scissors game.\n"
             "/stoprps - Stop the game for everyone.\n"
+            "/end - End your individual game.\n"
             "/scoreboard - Display the current scoreboard.\n"
             "/help - Show this help message.\n\n"
             "*How to Play:*\n"
