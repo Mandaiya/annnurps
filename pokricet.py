@@ -48,8 +48,8 @@ async def start_game(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
     })
 
     await context.bot.send_message(
-        chat_id=chat_id, text="📘 ** Book Cricket Game Started! Welcome to the BOOK CRICKET game ** \n\nPlayers can join using /join."
-    )
+        chat_id=chat_id, text="📘 ** Book Cricket Game Started! \n\nWelcome to the BOOK CRICKET game ** \n\nPlayers can join using /join."
+    )E
 
 # Join Game Command
 async def join_game(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -101,7 +101,7 @@ async def open_book(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
     player_list = ", ".join(player["name"] for player in game_state["players"])
     await update.message.reply_text(
-        f"🎮 The Game is starting! \n\nEach player gets 6 balls for each round.\n\nPlayers: {player_list}\n\nUse /flip to start your turn."
+        f"🎮 The Game is starting! \n\nEach player gets 6 balls for each round.\n\nPlayers: {player_list}\n\nUse /play to start your turn."
     )
 
     await start_player_turn(update, context)
@@ -225,11 +225,11 @@ async def stats_book(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
     for stats in player_stats.values():
         stats_message += (
             f"👤 {stats['name']}:\n"
-            f"🏏 - Games Played: {stats['games_played']}\n"
-            f"🕹 - Games Won: {stats['games_won']}\n"
-            f"🗽 - Games Lost: {stats['games_lost']}\n"
-            f"🎼 - Total Score: {stats['total_score']}\n"
-            f"🎚  - Level: {stats['level']}\n\n"
+            f"   - Games Played: {stats['games_played']}\n"
+            f"   - Games Won: {stats['games_won']}\n"
+            f"   - Games Lost: {stats['games_lost']}\n"
+            f"   - Total Score: {stats['total_score']}\n"
+            f"   - Level: {stats['level']}\n\n"
         )
 
     await update.message.reply_text(stats_message)
@@ -239,10 +239,10 @@ async def help_book(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Displays a list of available commands."""
     await update.message.reply_text(
         "📖 **Book Cricket Commands**:\n\n"
-        "1. `/startbook` - Start a new game.\n"
+        "1. `/startgame` - Start a new game.\n"
         "2. `/join` - Join an ongoing game.\n"
         "3. `/openbook` - Start the match (Creator only).\n"
-        "4. `/flip` - Play your turn.\n"
+        "4. `/play` - Play your turn.\n"
         "5. `/closebook` - Close the game.\n"
         "6. `/statsbook` - Display player statistics.\n"
         "7. `/helpbook` - Display this help message."
@@ -253,10 +253,10 @@ def main() -> None:
     """Run the bot."""
     application = Application.builder().token("7784540622:AAHN7M3-475DMj8GHUbcxyUhDsdktScrMQQ").build()
 
-    application.add_handler(CommandHandler("startbook", start_book))
+    application.add_handler(CommandHandler("startgame", start_game))
     application.add_handler(CommandHandler("join", join_game))
     application.add_handler(CommandHandler("openbook", open_book))
-    application.add_handler(CommandHandler("flip", flip))
+    application.add_handler(CommandHandler("play", play))
     application.add_handler(CommandHandler("closebook", close_book))
     application.add_handler(CommandHandler("statsbook", stats_book))
     application.add_handler(CommandHandler("helpbook", help_book))
