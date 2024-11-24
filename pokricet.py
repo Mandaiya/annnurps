@@ -162,7 +162,7 @@ async def play(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         game_state["balls_remaining"] -= 1
         await update.message.reply_text(
             f"⚪ Dot ball! No runs scored.\n\nBalls left: {game_state['balls_remaining']}\n"
-            f"\n📊 Current Score: {current_player['score']} runs."
+            f"📊 \nCurrent Score: {current_player['score']} runs."
         )
     else:
         score = random.choice(RUNS)
@@ -170,7 +170,7 @@ async def play(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         game_state["balls_remaining"] -= 1
         await update.message.reply_text(
             f"🏏 {current_player['name']} scored {score} runs! \n\nBalls left: {game_state['balls_remaining']}\n"
-            f"\n📊 Total Score: {current_player['score']} runs."
+            f"📊 \nTotal Score: {current_player['score']} runs."
         )
 
     if game_state["balls_remaining"] <= 0 or current_player["is_out"]:
@@ -251,7 +251,7 @@ async def help_book(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 # Main function
 def main() -> None:
     """Run the bot."""
-    application = Application.builder().token("7784540622:AAHN7M3-475DMj8GHUbcxyUhDsdktScrMQQ").build()
+    application = Application.builder().token("7784540622:AAGSJC25kYfh_xxzUiRBnSX-CG4nh3upHng").build()
 
     application.add_handler(CommandHandler("startgame", start_game))
     application.add_handler(CommandHandler("join", join_game))
