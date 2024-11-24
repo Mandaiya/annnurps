@@ -49,7 +49,7 @@ async def start_game(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
 
     await context.bot.send_message(
         chat_id=chat_id, text="📘 ** Book Cricket Game Started! \n\nWelcome to the BOOK CRICKET game ** \n\nPlayers can join using /join."
-    )E
+    )
 
 # Join Game Command
 async def join_game(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
