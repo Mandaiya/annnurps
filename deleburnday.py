@@ -4,6 +4,10 @@ from telegram.ext import Updater, CommandHandler, CallbackContext
 from pymongo import MongoClient
 from datetime import datetime, timedelta
 import threading
+from dotenv import load_dotenv
+
+load_dotenv()
+
 
 # Environment variables
 BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
