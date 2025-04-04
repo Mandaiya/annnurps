@@ -6,9 +6,9 @@ from telegram.ext import (
     CommandHandler, 
     CallbackQueryHandler, 
     CallbackContext, 
-    MessageHandler, 
-    Filters
+    MessageHandler
 )
+from telegram.ext.filters import filters #correct import for v20+
 import pickle
 import os
 from threading import Timer
@@ -22,7 +22,7 @@ logger = logging.getLogger(name)
 
 # Global variables
 BIRTHDAY_FILE = 'birthdays.pkl'
-ADMIN_ID = None  # Set your Telegram user ID here to receive monthly reports
+ADMIN_ID = 655594746  # Set your Telegram user ID here to receive monthly reports
 
 # Load existing birthdays or create new dict
 def load_birthdays():
