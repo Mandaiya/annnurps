@@ -1,45 +1,56 @@
+import sqlite3
 import logging
 from datetime import datetime
 from telegram import Update
-from telegram.ext import (
-    Updater,
-    CommandHandler,
-    CallbackContext,
-    MessageHandler,
-    Filters
-)
-import pickle
-import os
-from threading import Timer
+from telegram.ext import Updater, CommandHandler, CallbackContext
 import calendar
+from threading import Timer
 
-# Enable logging
-logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    level=logging.INFO
-)
-logger = logging.getLogger(name)
+# Database functions
+def init_db():
+    conn = sqlite3.connect('birthdays.db')
+    c = conn.cursor()
+    c.execute('''CREATE TABLE IF NOT EXISTS birthdays
+                 (user_id INTEGER PRIMARY KEY,
+                  day INTEGER,
+                  month INTEGER,
+                  name TEXT,
+                  username TEXT)''')
+    conn.commit()
+    conn.close()
 
-# Global variables
-BIRTHDAY_FILE = 'birthdays.pkl'
-ADMIN_ID = None  # Set your Telegram user ID here
+def save_birthday(user_id, day, month, name, username):
+    conn = sqlite3.connect('birthdays.db')
+    c = conn.cursor()
+    c.execute("REPLACE INTO birthdays VALUES (?, ?, ?, ?, ?)", 
+              (user_id, day, month, name, username))
+    conn.commit()
+    conn.close()
 
 def load_birthdays():
-    if os.path.exists(BIRTHDAY_FILE):
-        with open(BIRTHDAY_FILE, 'rb') as f:
-            return pickle.load(f)
-    return {}
+    conn = sqlite3.connect('birthdays.db')
+    c = conn.cursor()
+    c.execute("SELECT * FROM birthdays")
+    birthdays = {row[0]: {'day': row[1], 'month': row[2], 'name': row[3], 'username': row[4]} 
+                for row in c.fetchall()}
+    conn.close()
+    return birthdays
 
-def save_birthdays(birthdays):
-    with open(BIRTHDAY_FILE, 'wb') as f:
-        pickle.dump(birthdays, f)
+# Initialize database
+init_db()
+
+# Bot setup
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
+logger = logging.getLogger(name)
+
+ADMIN_ID = None  # Set your admin ID here
 
 def start(update: Update, context: CallbackContext) -> None:
     update.message.reply_text(
         "🎉 Welcome to the Birthday Calendar Bot! 🎉\n\n"
-        "Use /addbirthday to add your birthday\n"
+        "Use /addbirthday DD MM to add your birthday\n"
         "Use /mybirthday to check your stored birthday\n"
-        "Admins can use /birthdaysthismonth to see this month's birthdays"
+        "Admins: /birthdaysthismonth to see this month's birthdays"
     )
 
 def add_birthday(update: Update, context: CallbackContext) -> None:
@@ -47,10 +58,7 @@ def add_birthday(update: Update, context: CallbackContext) -> None:
     args = context.args
     
     if not args or len(args) != 2:
-        update.message.reply_text(
-            "Please enter your birthday in format: /addbirthday DD MM\n"
-            "Example: /addbirthday 15 04 for April 15th"
-        )
+        update.message.reply_text("Usage: /addbirthday DD MM (e.g., /addbirthday 15 04)")
         return
     
     try:
@@ -58,26 +66,16 @@ def add_birthday(update: Update, context: CallbackContext) -> None:
         month = int(args[1])
         
         if month < 1 or month > 12:
-            raise ValueError("Invalid month")
+            raise ValueError("Month must be 1-12")
         
         max_day = calendar.monthrange(2020, month)[1]
         if day < 1 or day > max_day:
-            raise ValueError(f"Invalid day for month {month}")
+            raise ValueError(f"Day must be 1-{max_day} for month {month}")
         
-        birthdays = load_birthdays()
-        birthdays[user.id] = {
-            'day': day,
-            'month': month,
-            'name': user.full_name,
-            'username': user.username
-        }
-        save_birthdays(birthdays)
-        
-        update.message.reply_text(
-            f"🎂 Birthday saved! We'll remember you on {day}/{month}"
-        )
+        save_birthday(user.id, day, month, user.full_name, user.username)
+        update.message.reply_text(f"🎂 Birthday saved! We'll remember you on {day}/{month}")
     except ValueError as e:
-        update.message.reply_text(f"Invalid date: {e}\nPlease use format: /addbirthday DD MM")
+        update.message.reply_text(f"Error: {e}\nUsage: /addbirthday DD MM")
 
 def my_birthday(update: Update, context: CallbackContext) -> None:
     user = update.effective_user
@@ -85,17 +83,13 @@ def my_birthday(update: Update, context: CallbackContext) -> None:
     
     if user.id in birthdays:
         bday = birthdays[user.id]
-        update.message.reply_text(
-            f"Your birthday is stored as: {bday['day']}/{bday['month']}"
-        )
+        update.message.reply_text(f"Your birthday: {bday['day']}/{bday['month']}")
     else:
-        update.message.reply_text(
-            "You haven't added your birthday yet. Use /addbirthday DD MM"
-        )
+        update.message.reply_text("You haven't added your birthday yet. Use /addbirthday DD MM")
 
 def birthdays_this_month(update: Update, context: CallbackContext) -> None:
     if ADMIN_ID and update.effective_user.id != ADMIN_ID:
-        update.message.reply_text("Sorry, this command is only for admins.")
+        update.message.reply_text("❌ Admin only command")
         return
     
     current_month = datetime.now().month
@@ -103,7 +97,7 @@ def birthdays_this_month(update: Update, context: CallbackContext) -> None:
     
     month_birthdays = [
         (bday['day'], bday['name'], bday.get('username', '')) 
-        for user_id, bday in birthdays.items() 
+        for bday in birthdays.values() 
         if bday['month'] == current_month
     ]
     
@@ -112,14 +106,10 @@ def birthdays_this_month(update: Update, context: CallbackContext) -> None:
         return
     
     month_birthdays.sort()
-    
-    response = "🎉 Birthdays this month:\n\n"
-    for day, name, username in month_birthdays:
-        response += f"{day}/{current_month}: {name}"
-        if username:
-            response += f" (@{username})"
-        response += "\n"
-    
+    response = "🎉 Birthdays this month:\n\n" + "\n".join(
+        f"{day}/{current_month}: {name}{' (@' + username + ')' if username else ''}"
+        for day, name, username in month_birthdays
+    )
     update.message.reply_text(response)
 
 def send_monthly_report(context: CallbackContext):
@@ -127,13 +117,12 @@ def send_monthly_report(context: CallbackContext):
         return
     
     current_month = datetime.now().month
-
-month_name = datetime.now().strftime('%B')
+    month_name = datetime.now().strftime('%B')
     birthdays = load_birthdays()
     
     month_birthdays = [
         (bday['day'], bday['name'], bday.get('username', '')) 
-        for user_id, bday in birthdays.items() 
+        for bday in birthdays.values() 
         if bday['month'] == current_month
     ]
     
@@ -141,12 +130,10 @@ month_name = datetime.now().strftime('%B')
         message = f"No birthdays in {month_name}!"
     else:
         month_birthdays.sort()
-        message = f"🎉 Birthdays in {month_name}:\n\n"
-        for day, name, username in month_birthdays:
-            message += f"{day}/{current_month}: {name}"
-            if username:
-                message += f" (@{username})"
-            message += "\n"
+        message = f"🎉 Birthdays in {month_name}:\n\n" + "\n".join(
+            f"{day}/{current_month}: {name}{' (@' + username + ')' if username else ''}"
+            for day, name, username in month_birthdays
+        )
     
     context.bot.send_message(chat_id=ADMIN_ID, text=message)
 
@@ -156,23 +143,16 @@ def schedule_monthly_report(updater):
     next_year = now.year + (1 if next_month == 1 else 0)
     next_report = datetime(next_year, next_month, 1, 9, 0)
     delay = (next_report - now).total_seconds()
-    Timer(delay, lambda: send_monthly_report(updater.dispatcher) and schedule_monthly_report(updater)).start()
+    Timer(delay, lambda: [send_monthly_report(updater.dispatcher), schedule_monthly_report(updater)]).start()
 
-def main() -> None:
-    TOKEN = "7621821845:AAGGPOS6VpwXLDGsYvMaANaEAEVFTy3qYpg"
-    global ADMIN_ID
-    ADMIN_ID = 655594746  # Replace with your Telegram user ID
+def main():
+    updater = Updater("7621821845:AAGGPOS6VpwXLDGsYvMaANaEAEVFTy3qYpg", use_context=True)
+    dp = updater.dispatcher
     
-    updater = Updater(TOKEN)
-    dispatcher = updater.dispatcher
-    
-    dispatcher.add_handler(CommandHandler("start", start))
-    dispatcher.add_handler(CommandHandler("addbirthday", add_birthday))
-    dispatcher.add_handler(CommandHandler("mybirthday", my_birthday))
-    dispatcher.add_handler(CommandHandler("birthdaysthismonth", birthdays_this_month))
-    
-    # Handle all text messages that aren't commands
-    dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, start))
+    dp.add_handler(CommandHandler("start", start))
+    dp.add_handler(CommandHandler("addbirthday", add_birthday))
+    dp.add_handler(CommandHandler("mybirthday", my_birthday))
+    dp.add_handler(CommandHandler("birthdaysthismonth", birthdays_this_month))
     
     updater.start_polling()
     schedule_monthly_report(updater)
