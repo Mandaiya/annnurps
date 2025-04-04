@@ -1,9 +1,10 @@
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 import calendar
 import sqlite3
+from apscheduler.schedulers.background import BackgroundScheduler
 
 # Configure logging
 logging.basicConfig(
@@ -45,8 +46,9 @@ def load_birthdays():
 # Initialize the database
 init_db()
 
-# Admin ID
+# Admin ID and Group ID (replace with your Telegram IDs)
 ADMIN_ID = 655594746  # Replace with your Telegram user ID
+GROUP_ID = -1001234567890  # Replace with your Telegram group chat ID
 
 # Command: Start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -119,6 +121,37 @@ async def birthdays_this_month(update: Update, context: ContextTypes.DEFAULT_TYP
     )
     await update.message.reply_text(response)
 
+# Reminder for tomorrow's birthdays
+async def remind_admin(context: ContextTypes.DEFAULT_TYPE):
+    tomorrow = (datetime.now() + timedelta(days=1)).date()
+    birthdays = load_birthdays()
+
+    tomorrow_birthdays = [
+        bday for bday in birthdays.values()
+        if datetime(year=datetime.now().year, month=bday['month'], day=bday['day']).date() == tomorrow
+    ]
+
+    if tomorrow_birthdays:
+        message = "🎉 Reminder: Tomorrow's Birthdays:\n\n" + "\n".join(
+            f"{bday['name']} (@{bday['username']})" if bday['username'] else bday['name']
+            for bday in tomorrow_birthdays
+        )
+        await context.bot.send_message(chat_id=ADMIN_ID, text=message)
+
+# Wish users on their birthday
+async def wish_user(context: ContextTypes.DEFAULT_TYPE):
+    today = datetime.now().date()
+    birthdays = load_birthdays()
+
+    today_birthdays = [
+        bday for bday in birthdays.values()
+        if datetime(year=datetime.now().year, month=bday['month'], day=bday['day']).date() == today
+    ]
+
+    for bday in today_birthdays:
+        message = f"🎉 Happy Birthday, {bday['name']}! 🎂🎁🎈"
+        await context.bot.send_message(chat_id=GROUP_ID, text=message)
+
 # Main function
 def main():
     app = ApplicationBuilder().token("7621821845:AAGGPOS6VpwXLDGsYvMaANaEAEVFTy3qYpg").build()
@@ -127,6 +160,12 @@ def main():
     app.add_handler(CommandHandler("addbirthday", add_birthday))
     app.add_handler(CommandHandler("mybirthday", my_birthday))
     app.add_handler(CommandHandler("birthdaysthismonth", birthdays_this_month))
+
+    # Schedule reminders and wishes
+    scheduler = BackgroundScheduler()
+    scheduler.add_job(remind_admin, 'cron', hour=9, args=[app])  # Reminder for tomorrow's birthdays
+    scheduler.add_job(wish_user, 'cron', hour=9, args=[app])  # Birthday wishes
+    scheduler.start()
 
     print("Bot is running!")
     app.run_polling()
