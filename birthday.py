@@ -8,7 +8,7 @@ from telegram.ext import (
     CallbackContext, 
     MessageHandler
 )
-from telegram.ext.filters import filters #correct import for v20+
+from telegram.ext.filters import Filters #correct import for v20+
 import pickle
 import os
 from threading import Timer
