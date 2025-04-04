@@ -2,7 +2,7 @@ from pyrogram import Client, filters
 from datetime import datetime
 
 # Initialize the bot
-app = Client("birthday_bot", bot_token="7621821845:AAGGPOS6VpwXLDGsYvMaANaEAEVFTy3qYpg")
+app = Client("my_bot", bot_token="7621821845:AAGGPOS6VpwXLDGsYvMaANaEAEVFTy3qYpg")
 
 # Dictionary to store birthdays
 birthdays = {}
