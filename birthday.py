@@ -48,7 +48,7 @@ init_db()
 
 # Admin ID and Group ID (replace with your Telegram IDs)
 ADMIN_ID = 655594746  # Replace with your Telegram user ID
-GROUP_ID = -1001234567890  # Replace with your Telegram group chat ID
+GROUP_ID = -1001743709729  # Replace with your Telegram group chat ID
 
 # Command: Start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
