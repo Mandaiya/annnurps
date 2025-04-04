@@ -11,7 +11,7 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     level=logging.INFO
 )
-logger = logging.getLogger(name)  # Fixed: Correct capitalization and name
+logger = logging.getLogger()  # Fixed: Correct capitalization and name
 
 # Database setup
 def init_db():
