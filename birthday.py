@@ -1,14 +1,14 @@
+Podangu, [05-04-2025 02:34]
 import logging
 from datetime import datetime
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import Update
 from telegram.ext import (
-    Updater, 
-    CommandHandler, 
-    CallbackQueryHandler, 
-    CallbackContext, 
-    MessageHandler
+    Updater,
+    CommandHandler,
+    CallbackContext,
+    MessageHandler,
+    Filters
 )
-from telegram.ext.filters import Filters #correct import for v20+
 import pickle
 import os
 from threading import Timer
@@ -16,33 +16,31 @@ import calendar
 
 # Enable logging
 logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    level=logging.INFO
 )
 logger = logging.getLogger(name)
 
 # Global variables
 BIRTHDAY_FILE = 'birthdays.pkl'
-ADMIN_ID = 655594746  # Set your Telegram user ID here to receive monthly reports
+ADMIN_ID = None  # Set your Telegram user ID here
 
-# Load existing birthdays or create new dict
 def load_birthdays():
     if os.path.exists(BIRTHDAY_FILE):
         with open(BIRTHDAY_FILE, 'rb') as f:
             return pickle.load(f)
     return {}
 
-# Save birthdays to file
 def save_birthdays(birthdays):
     with open(BIRTHDAY_FILE, 'wb') as f:
         pickle.dump(birthdays, f)
 
-# Command handlers
 def start(update: Update, context: CallbackContext) -> None:
     update.message.reply_text(
         "🎉 Welcome to the Birthday Calendar Bot! 🎉\n\n"
         "Use /addbirthday to add your birthday\n"
         "Use /mybirthday to check your stored birthday\n"
-        "Admins can use /birthdays this month to see this month's birthdays"
+        "Admins can use /birthdaysthismonth to see this month's birthdays"
     )
 
 def add_birthday(update: Update, context: CallbackContext) -> None:
@@ -60,12 +58,10 @@ def add_birthday(update: Update, context: CallbackContext) -> None:
         day = int(args[0])
         month = int(args[1])
         
-        # Validate date
         if month < 1 or month > 12:
             raise ValueError("Invalid month")
         
-        # Check if day is valid for the month
-        max_day = calendar.monthrange(2020, month)[1]  # Using 2020 for leap year (Feb 29)
+        max_day = calendar.monthrange(2020, month)[1]
         if day < 1 or day > max_day:
             raise ValueError(f"Invalid day for month {month}")
         
@@ -99,7 +95,6 @@ def my_birthday(update: Update, context: CallbackContext) -> None:
         )
 
 def birthdays_this_month(update: Update, context: CallbackContext) -> None:
-    # Check if user is admin
     if ADMIN_ID and update.effective_user.id != ADMIN_ID:
         update.message.reply_text("Sorry, this command is only for admins.")
         return
@@ -117,7 +112,6 @@ def birthdays_this_month(update: Update, context: CallbackContext) -> None:
         update.message.reply_text("No birthdays this month!")
         return
     
-    # Sort by day
     month_birthdays.sort()
     
     response = "🎉 Birthdays this month:\n\n"
@@ -134,7 +128,9 @@ def send_monthly_report(context: CallbackContext):
         return
     
     current_month = datetime.now().month
-    month_name = datetime.now().strftime('%B')
+
+Podangu, [05-04-2025 02:34]
+month_name = datetime.now().strftime('%B')
     birthdays = load_birthdays()
     
     month_birthdays = [
@@ -146,9 +142,7 @@ def send_monthly_report(context: CallbackContext):
     if not month_birthdays:
         message = f"No birthdays in {month_name}!"
     else:
-        # Sort by day
         month_birthdays.sort()
-        
         message = f"🎉 Birthdays in {month_name}:\n\n"
         for day, name, username in month_birthdays:
             message += f"{day}/{current_month}: {name}"
@@ -159,43 +153,31 @@ def send_monthly_report(context: CallbackContext):
     context.bot.send_message(chat_id=ADMIN_ID, text=message)
 
 def schedule_monthly_report(updater):
-    # Calculate time until next month
     now = datetime.now()
     next_month = now.month % 12 + 1
     next_year = now.year + (1 if next_month == 1 else 0)
-    
-    # Schedule for 1st of next month at 9:00 AM
     next_report = datetime(next_year, next_month, 1, 9, 0)
     delay = (next_report - now).total_seconds()
-    
-    # Schedule the job
     Timer(delay, lambda: send_monthly_report(updater.dispatcher) and schedule_monthly_report(updater)).start()
 
 def main() -> None:
-    # Set your Telegram bot token here
     TOKEN = "7621821845:AAGGPOS6VpwXLDGsYvMaANaEAEVFTy3qYpg"
     global ADMIN_ID
     ADMIN_ID = 655594746  # Replace with your Telegram user ID
     
-    # Create the Updater and pass it your bot's token.
     updater = Updater(TOKEN)
-    
-    # Get the dispatcher to register handlers
     dispatcher = updater.dispatcher
     
-    # Register command handlers
     dispatcher.add_handler(CommandHandler("start", start))
     dispatcher.add_handler(CommandHandler("addbirthday", add_birthday))
     dispatcher.add_handler(CommandHandler("mybirthday", my_birthday))
     dispatcher.add_handler(CommandHandler("birthdaysthismonth", birthdays_this_month))
     
-    # Start the Bot
+    # Handle all text messages that aren't commands
+    dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, start))
+    
     updater.start_polling()
-    
-    # Schedule the first monthly report
     schedule_monthly_report(updater)
-    
-    # Run the bot until you press Ctrl-C
     updater.idle()
 
 if __name__ == '__main__':
