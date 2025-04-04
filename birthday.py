@@ -1,4 +1,3 @@
-Podangu, [05-04-2025 02:52]
 import logging
 from datetime import datetime
 from telegram import Update
