@@ -1,8 +1,12 @@
 from pyrogram import Client, filters
 from datetime import datetime
+import os
+
+# Replace 'YOUR_API_KEY' with your BotFather bot token or use environment variables
+API_KEY = os.getenv("BOT_TOKEN") or "YOUR_API_KEY"
 
 # Initialize the bot
-app = Client("my_bot", bot_token="7621821845:AAGGPOS6VpwXLDGsYvMaANaEAEVFTy3qYpg")
+app = Client("birthday_bot", bot_token=API_KEY)
 
 # Dictionary to store birthdays
 birthdays = {}
@@ -62,4 +66,7 @@ def get_birthdays(client, message):
 
 # Run the bot
 if __name__ == "__main__":
-    app.run()
+    if API_KEY == "7621821845:AAGGPOS6VpwXLDGsYvMaANaEAEVFTy3qYpg":
+        print("Error: Please replace 'YOUR_API_KEY' with your actual Telegram bot token or set it as an environment variable.")
+    else:
+        app.run()
