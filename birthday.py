@@ -1,12 +1,20 @@
-import sqlite3
+Podangu, [05-04-2025 02:52]
 import logging
 from datetime import datetime
 from telegram import Update
 from telegram.ext import Updater, CommandHandler, CallbackContext
 import calendar
 from threading import Timer
+import sqlite3
 
-# Database functions
+# Initialize logging correctly
+logging.basicConfig(
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    level=logging.INFO
+)
+logger = logging.getLogger(name)  # Fixed: Correct capitalization and name
+
+# Database setup
 def init_db():
     conn = sqlite3.connect('birthdays.db')
     c = conn.cursor()
@@ -39,11 +47,7 @@ def load_birthdays():
 # Initialize database
 init_db()
 
-# Bot setup
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
-logger = logging.getLogger(name)
-
-ADMIN_ID = None  # Set your admin ID here
+ADMIN_ID = 655594746  # Set your admin ID here
 
 def start(update: Update, context: CallbackContext) -> None:
     update.message.reply_text(
