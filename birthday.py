@@ -3,7 +3,7 @@ from datetime import datetime
 import os
 
 # Replace 'YOUR_API_KEY' with your BotFather bot token or use environment variables
-API_KEY = os.getenv("BOT_TOKEN") or "YOUR_API_KEY"
+API_KEY = os.getenv("7621821845:AAGGPOS6VpwXLDGsYvMaANaEAEVFTy3qYpg") or "YOUR_API_KEY"
 
 # Initialize the bot
 app = Client("birthday_bot", bot_token=API_KEY)
