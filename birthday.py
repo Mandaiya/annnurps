@@ -1,4 +1,3 @@
-Podangu, [05-04-2025 02:34]
 import logging
 from datetime import datetime
 from telegram import Update
@@ -129,7 +128,6 @@ def send_monthly_report(context: CallbackContext):
     
     current_month = datetime.now().month
 
-Podangu, [05-04-2025 02:34]
 month_name = datetime.now().strftime('%B')
     birthdays = load_birthdays()
     
